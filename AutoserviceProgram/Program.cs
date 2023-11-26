@@ -63,7 +63,7 @@ namespace Autoservice
         private void ServeClient()
         {
             Client client = _clients.Dequeue();
-            ConsoleHelper.PrintColor(ConsoleColor.DarkYellow, $"A client approaches, needing to replace {client.DetailCountToMend} {client.DetailToMend}. Choose the part number:");
+            ConsoleHelper.PrintColor(ConsoleColor.DarkYellow, $"A client approaches, needing to replace {client.Count} {client.TypeOfDetailToBeRepaired}. Choose the part number:");
 
             Storage selectedStorage = GetStorage();
 
@@ -100,7 +100,7 @@ namespace Autoservice
 
         private int CalculateMoneyEarned(Client client, Storage storage)
         {
-            int repairCost = storage.Detail.Count * client.DetailCountToMend;
+            int repairCost = storage.Detail.Count * client.Count;
             return repairCost;
         }
 
@@ -135,9 +135,10 @@ namespace Autoservice
             ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Press: 1 to start");
             ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "The stock contains:");
 
-            for (int i = 0; i < _storages.Count; i++)
+            for (int index = 0; index < _storages.Count; index++)
             {
-                ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"{i} - part {_storages[i].Detail.Type}, quantity {_storages[i].DetailCount}");
+                var storage = _storages[index];
+                ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"{index} - part {storage.Detail.Type}, quantity {storage.DetailCount}");
             }
         }
 
@@ -146,18 +147,23 @@ namespace Autoservice
             int minDetailCount = 5;
             int maxDetailCount = 50;
 
-            foreach (DetailType type in Enum.GetValues(typeof(DetailType)))
-            {
-                _storages.Add(new Storage(new Detail(type, _random.Next(minDetailCount, maxDetailCount)), _random.Next(minDetailCount, maxDetailCount)));
-            }
+            Enum.GetValues(typeof(DetailType))
+                .Cast<DetailType>()
+                .ToList()
+                .ForEach(type =>
+                {
+                    _storages.Add(new Storage(new Detail(type, _random.Next(minDetailCount, maxDetailCount)), _random.Next(minDetailCount, maxDetailCount)));
+                });
         }
 
         private void GenerateClients(int clientCount)
         {
-            for (int i = 0; i < clientCount; i++)
-            {
-                _clients.Enqueue(new Client());
-            }
+            Enumerable.Range(1, clientCount)
+                .ToList()
+                .ForEach(_ =>
+                {
+                    _clients.Enqueue(new Client());
+                });
         }
     }
 
@@ -200,14 +206,14 @@ namespace Autoservice
 
     class Client
     {
-        public int DetailCountToMend { get; private set; }
-        public DetailType DetailToMend { get; private set; }
+        public int Count { get; private set; }
+        public DetailType TypeOfDetailToBeRepaired { get; private set; }
         private Random _random = new Random();
 
         public Client()
         {
-            DetailToMend = GenerateDetailToMend();
-            DetailCountToMend = GenerateDetailCount();
+            TypeOfDetailToBeRepaired = GenerateDetailToMend();
+            Count = GenerateDetailCount();
         }
 
         private DetailType GenerateDetailToMend()
