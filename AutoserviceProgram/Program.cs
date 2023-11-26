@@ -28,7 +28,7 @@ namespace Autoservice
 
         public Service()
         {
-            GenerateStock();
+            GenerateStorage();
             GenerateClients(20);
         }
 
@@ -36,7 +36,7 @@ namespace Autoservice
         {
             while (_clients.Count > 0)
             {
-                DisplayStock();
+                DisplayStorage();
 
                 ConsoleHelper.PrintColor(ConsoleColor.DarkRed, $"\nTotal revenue for the day: {_serviceRevenue} money.");
                 ConsoleHelper.PrintColor(ConsoleColor.DarkRed, $"\nTotal revenue for the day: {_penalties} money.");
@@ -130,8 +130,9 @@ namespace Autoservice
             _penalties += fine;
         }
 
-        private void DisplayStock()
+        private void DisplayStorage()
         {
+            ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Press: 1 to start");
             ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "The stock contains:");
 
             for (int i = 0; i < _storages.Count; i++)
@@ -140,7 +141,7 @@ namespace Autoservice
             }
         }
 
-        private void GenerateStock()
+        private void GenerateStorage()
         {
             int minDetailCount = 5;
             int maxDetailCount = 50;
