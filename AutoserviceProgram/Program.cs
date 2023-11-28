@@ -22,14 +22,13 @@ namespace Autoservice
 
         private List<Storage> _storages = new List<Storage>();
         private Queue<Client> _clients = new Queue<Client>();
-        private Random _random = new Random();
-        private int _serviceRevenue = 0;
+        private int _serviceRevenue = 100;
         private int _penalties = 0;
 
         public Service()
         {
             GenerateStorage();
-            GenerateClients(20);
+            GenerateClients(5);
         }
 
         public void Work()
@@ -57,7 +56,6 @@ namespace Autoservice
                 Console.ReadLine();
                 Console.Clear();
             }
-
         }
 
         private void ServeClient()
@@ -126,7 +124,7 @@ namespace Autoservice
         private void ApplyPenalty()
         {
             int fine = 500;
-            ConsoleHelper.PrintColor(ConsoleColor.DarkYellow, $"\nTotal revenue for the day: {fine} money.");
+            ConsoleHelper.PrintColor(ConsoleColor.DarkYellow, $"\nPenalty applied: {fine} money.");
             _penalties += fine;
         }
 
@@ -144,15 +142,15 @@ namespace Autoservice
 
         private void GenerateStorage()
         {
-            int minDetailCount = 5;
-            int maxDetailCount = 50;
+            int minDetailCount = 1;
+            int maxDetailCount = 5;
 
             Enum.GetValues(typeof(DetailType))
                 .Cast<DetailType>()
                 .ToList()
                 .ForEach(type =>
                 {
-                    _storages.Add(new Storage(new Detail(type, _random.Next(minDetailCount, maxDetailCount)), _random.Next(minDetailCount, maxDetailCount)));
+                    _storages.Add(new Storage(new Detail(type, RandomGenerate.Next(minDetailCount, maxDetailCount)), RandomGenerate.Next(minDetailCount, maxDetailCount)));
                 });
         }
 
@@ -208,7 +206,6 @@ namespace Autoservice
     {
         public int Count { get; private set; }
         public DetailType TypeOfDetailToBeRepaired { get; private set; }
-        private Random _random = new Random();
 
         public Client()
         {
@@ -219,14 +216,21 @@ namespace Autoservice
         private DetailType GenerateDetailToMend()
         {
             int enumCount = Enum.GetNames(typeof(DetailType)).Length;
-            return (DetailType)_random.Next(0, enumCount);
+            return (DetailType)RandomGenerate.Next(0, enumCount);
         }
 
         private int GenerateDetailCount()
         {
             int enumCount = Enum.GetNames(typeof(DetailType)).Length;
-            return _random.Next(1, enumCount);
+            return RandomGenerate.Next(1, enumCount);
         }
+    }
+
+    static class RandomGenerate
+    {
+        private static Random s_random = new Random();
+
+        public static int Next(int minimum, int maximum) => s_random.Next(minimum, maximum);
     }
 
     static class ConsoleHelper
