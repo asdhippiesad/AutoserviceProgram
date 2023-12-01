@@ -22,10 +22,8 @@ namespace Autoservice
     {
         private const string ServeCommand = "1";
 
-        private List<Stack> _storages = new List<Stack>();
+        private List<Stack> _stacks = new List<Stack>();
         private Queue<Client> _clients = new Queue<Client>();
-
-        private Stack _selectedStorage = new Stack();
 
         private int _serviceRevenue = 100;
         private int _penalties = 0;
@@ -68,14 +66,14 @@ namespace Autoservice
             Client client = _clients.Dequeue();
             ConsoleHelper.PrintColor(ConsoleColor.DarkYellow, $"A client approaches, needing to replace {client.Count} {client.TypeOfDetailToBeRepaired}. Choose the part number:");
 
-            Stack selectedStorage = GetStorage();
+            Stack selectedStack = GetStorage();
 
-            if (selectedStorage != null)
+            if (selectedStack != null)
             {
                 string answerYes = "yes";
                 string answerNo = "no";
 
-                int moneyEarned = CalculateMoneyEarned(client, selectedStorage);
+                int moneyEarned = CalculateMoneyEarned(client, selectedStack);
                 _serviceRevenue += moneyEarned;
 
                 ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"\nTotal revenue for the day: {moneyEarned} money.");
@@ -85,7 +83,7 @@ namespace Autoservice
 
                 if (userAnswer == answerYes)
                 {
-                    _selectedStorage.ReplaceDetail();
+                    selectedStack.RemoveDetail(_clients.Count);
                     ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Replacement successful!");
                 }
                 else if (userAnswer == answerNo)
@@ -107,18 +105,18 @@ namespace Autoservice
         private void GenerateDetailsFromStack(DetailsFactory stack)
         {
             List<Detail> details = stack.CreateDetails();
-            Dictionary<DetailType, int> detailDictionary = stack.GetServiceToDictionary();
+            int minDetailCount = 20;
+            int maxDetailCount = 50;
 
             foreach (Detail detail in details)
             {
-                int count = detailDictionary.TryGetValue(detail.Type, out int value) ? value : 0;
-                _storages.Add(new Stack(detail, count));
+                _stacks.Add(new Stack(detail, RandomGenerate.Next(minDetailCount, maxDetailCount)));
             }
         }
 
-        private int CalculateMoneyEarned(Client client, Stack storage)
+        private int CalculateMoneyEarned(Client client, Stack stack)
         {
-            int repairCost = storage.Detail.Price * client.Count;
+            int repairCost = stack.Detail.Price * client.Count;
 
             return repairCost;
         }
@@ -130,7 +128,7 @@ namespace Autoservice
 
             if (int.TryParse(userChoice, out int userNumber))
             {
-                Stack selectedStock = _storages.ElementAtOrDefault(userNumber);
+                Stack selectedStock = _stacks.ElementAtOrDefault(userNumber);
 
                 if (selectedStock != null)
                 {
@@ -154,9 +152,9 @@ namespace Autoservice
             ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Press: 1 to start");
             ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "The stock contains:");
 
-            for (int index = 0; index < _storages.Count; index++)
+            for (int index = 0; index < _stacks.Count; index++)
             {
-                var storage = _storages[index];
+                var storage = _stacks[index];
                 ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"{index} - part {storage.Detail.Type}, quantity {storage.DetailCount}, {storage.Detail.Price}");
             }
         }
@@ -181,15 +179,13 @@ namespace Autoservice
 
     class Detail
     {
-        public Detail(DetailType detailType, int count, int price)
+        public Detail(DetailType detailType, int price)
         {
             Type = detailType;
             Price = price;
-            Count = count;
         }
 
         public DetailType Type { get; private set; }
-        public int Count { get; private set; }
         public int Price { get; private set; }
     }
 
@@ -197,14 +193,14 @@ namespace Autoservice
     {
         private List<Detail> _details = new List<Detail>
         {
-            new Detail(DetailType.Wheel,count: 3, price: 200),
-            new Detail(DetailType.AutoLight,count: 1, price: 500),
-            new Detail(DetailType.Engine,count: 2, price: 1000),
+            new Detail(DetailType.Wheel, price: 200),
+            new Detail(DetailType.AutoLight, price: 500),
+            new Detail(DetailType.Engine, price: 1000),
         };
 
-        public List<Detail> CreateDetails() => _details.Select(details => new Detail(details.Type, details.Count, details.Price)).ToList();
+        public List<Detail> CreateDetails() => _details.Select(details => new Detail(details.Type, details.Price)).ToList();
 
-        public Dictionary<DetailType, int> GetServiceToDictionary() => _details.ToDictionary(detail => detail.Type, detail => detail.Count);
+        public Dictionary<DetailType, int> GetServiceToDictionary() => _details.ToDictionary(detail => detail.Type, detail => detail.Price);
     }
 
     class Stack
@@ -220,15 +216,9 @@ namespace Autoservice
         public Detail Detail { get; private set; }
         public int DetailCount { get; private set; }
 
-        public void RemoveDetail()
+        public void RemoveDetail(int detailCount)
         {
-            if (DetailCount > 0)
-                DetailCount--;
-        }
-
-        public void ReplaceDetail()
-        {
-            DetailCount++;
+            DetailCount -= detailCount;
         }
     }
 
