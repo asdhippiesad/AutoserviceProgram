@@ -193,6 +193,7 @@ namespace Autoservice
             {
                 DetailType typeToReplace = selectedStack.Detail.Type;
                 Stack newStack = _stacks.FirstOrDefault(s => s.Detail.Type == typeToReplace);
+                
                 if (newStack != null)
                 {
                     newStack.AddDetail(_clients.Count);
