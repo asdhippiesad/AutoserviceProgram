@@ -59,6 +59,9 @@ namespace Autoservice
                 Console.ReadLine();
                 Console.Clear();
             }
+
+            ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "All clients have been served. Press any key to exit.");
+            Console.ReadKey();
         }
 
         private void ServeClient()
@@ -70,29 +73,38 @@ namespace Autoservice
 
             if (selectedStack != null)
             {
-                string answerYes = "yes";
-                string answerNo = "no";
-
-                int moneyEarned = CalculateMoneyEarned(client, selectedStack);
-                _serviceRevenue += moneyEarned;
-
-                ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"\nTotal revenue for the day: {moneyEarned} money.");
-
-                ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Can you replace it?");
-                string userAnswer = Console.ReadLine();
-
-                if (userAnswer == answerYes)
+                if (selectedStack.DetailCount >= _clients.Count)
                 {
-                    selectedStack.RemoveDetail(_clients.Count);
-                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Replacement successful!");
-                }
-                else if (userAnswer == answerNo)
-                {
-                    ApplyPenalty();
+                    string answerYes = "yes";
+                    string answerNo = "no";
+
+                    int moneyEarned = CalculateMoneyEarned(client, selectedStack);
+                    _serviceRevenue += moneyEarned;
+
+                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, $"\nTotal revenue for the day: {moneyEarned} money.");
+
+                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Can you replace it?");
+                    string userAnswer = Console.ReadLine();
+
+                    if (userAnswer == answerYes)
+                    {
+                        selectedStack.RemoveDetail(_clients.Count);
+                        ReplaceBrokenDetails(selectedStack, _clients.Count);
+                        ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Replacement successful!");
+                    }
+                    else if (userAnswer == answerNo)
+                    {
+                        ApplyPenalty();
+                    }
+                    else
+                    {
+                        ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Unable to recognize the answer. The client left without waiting for an answer.");
+                        ApplyPenalty();
+                    }
                 }
                 else
                 {
-                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Unable to recognize the answer. The client left without waiting for an answer.");
+                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Not enough details in stock to fulfill the request.");
                     ApplyPenalty();
                 }
             }
@@ -105,8 +117,8 @@ namespace Autoservice
         private void GenerateDetailsFromStack(DetailsFactory stack)
         {
             List<Detail> details = stack.CreateDetails();
-            int minDetailCount = 20;
-            int maxDetailCount = 50;
+            int minDetailCount = 10;
+            int maxDetailCount = 20;
 
             foreach (Detail detail in details)
             {
@@ -168,6 +180,30 @@ namespace Autoservice
                     _clients.Enqueue(new Client());
                 });
         }
+
+        private void ReplaceBrokenDetails(Stack selectedStack, int requestedCount)
+        {
+            for (int i = 0; i < requestedCount; i++)
+            {
+                selectedStack.RemoveDetail(_clients.Count);
+            }
+
+            int newDetailsCount = requestedCount;
+            while (newDetailsCount > 0)
+            {
+                DetailType typeToReplace = selectedStack.Detail.Type;
+                Stack newStack = _stacks.FirstOrDefault(s => s.Detail.Type == typeToReplace);
+                if (newStack != null)
+                {
+                    newStack.AddDetail(_clients.Count);
+                    newDetailsCount--;
+                }
+                else
+                {
+                    ConsoleHelper.PrintColor(ConsoleColor.DarkBlue, "Ran out of new details for replacement.");
+                }
+            }
+        }
     }
 
     enum DetailType
@@ -191,16 +227,16 @@ namespace Autoservice
 
     class DetailsFactory
     {
-        private List<Detail> _details = new List<Detail>
+        private List<Detail> _details = new List<Detail>();
+
+        public DetailsFactory()
         {
-            new Detail(DetailType.Wheel, price: 200),
-            new Detail(DetailType.AutoLight, price: 500),
-            new Detail(DetailType.Engine, price: 1000),
-        };
+            _details.Add(new Detail(DetailType.Wheel, price: 200));
+            _details.Add(new Detail(DetailType.AutoLight, price: 500));
+            _details.Add(new Detail(DetailType.Engine, price: 1000));
+        }
 
         public List<Detail> CreateDetails() => _details.Select(details => new Detail(details.Type, details.Price)).ToList();
-
-        public Dictionary<DetailType, int> GetServiceToDictionary() => _details.ToDictionary(detail => detail.Type, detail => detail.Price);
     }
 
     class Stack
@@ -219,6 +255,11 @@ namespace Autoservice
         public void RemoveDetail(int detailCount)
         {
             DetailCount -= detailCount;
+        }
+
+        public void AddDetail(int detailCount)
+        {
+            DetailCount += detailCount;
         }
     }
 
