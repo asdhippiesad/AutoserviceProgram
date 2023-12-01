@@ -192,7 +192,7 @@ namespace Autoservice
             while (newDetailsCount > 0)
             {
                 DetailType typeToReplace = selectedStack.Detail.Type;
-                Stack newStack = _stacks.FirstOrDefault(s => s.Detail.Type == typeToReplace);
+                Stack newStack = _stacks.FirstOrDefault(detail => detail.Detail.Type == typeToReplace);
                 
                 if (newStack != null)
                 {
